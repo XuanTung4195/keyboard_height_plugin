@@ -1,6 +1,7 @@
 package com.nschairer.keyboard_height_plugin
 import android.graphics.Rect
 import android.os.Build
+import android.view.View
 import androidx.annotation.NonNull
 import android.view.ViewTreeObserver
 import androidx.annotation.RequiresApi
@@ -64,13 +65,22 @@ class KeyboardHeightPlugin : FlutterPlugin, EventChannel.StreamHandler, Activity
     }
 
     private fun isNavigationBarVisible(): Boolean {
-        val decorView = activityPluginBinding?.activity?.window?.decorView
-        val rootWindowInsets = decorView?.rootWindowInsets ?: return false
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            rootWindowInsets.isVisible(android.view.WindowInsets.Type.navigationBars())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val decorView = activityPluginBinding?.activity?.window?.decorView
+            val rootWindowInsets = decorView?.rootWindowInsets ?: return false
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                rootWindowInsets.isVisible(android.view.WindowInsets.Type.navigationBars())
+            } else {
+                val systemWindowInsetBottom = rootWindowInsets.systemWindowInsetBottom
+                systemWindowInsetBottom > 0
+            }
         } else {
-            val systemWindowInsetBottom = rootWindowInsets.systemWindowInsetBottom
-            systemWindowInsetBottom > 0
+            val uiOptions = activityPluginBinding?.activity?.window?.decorView?.systemUiVisibility
+            if (uiOptions == null) {
+                return true;
+            }
+            val isImmersiveModeEnabled = uiOptions or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION == uiOptions
+            return !isImmersiveModeEnabled
         }
     }
     
